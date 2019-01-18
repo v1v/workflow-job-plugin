@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?jelly escape-by-default='true'?>
 <!--
   ~ The MIT License
   ~
-  ~ Copyright (c) 2013-2014, CloudBees, Inc.
+  ~ Copyright (c) 2019, CloudBees, Inc.
   ~
   ~ Permission is hereby granted, free of charge, to any person obtaining a copy
   ~ of this software and associated documentation files (the "Software"), to deal
@@ -24,21 +23,9 @@
   ~ THE SOFTWARE.
   -->
 
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:f="/lib/form" xmlns:p="/lib/hudson/project">
-    <p:config-disableBuild/>
-
-    <!-- pseudo-trigger to configure URL to trigger builds remotely. -->
-    <st:include page="/hudson/model/BuildAuthorizationToken/config.jelly" />
-
-    <f:section title="${%Advanced Project Options}">
-        <f:advanced>
-            <f:entry title="${%Display Name}" field="displayNameOrNull">
-                <f:textbox checkUrl="'${rootURL}/checkDisplayName?displayName='+encodeURIComponent(this.value)+'&amp;jobName='+encodeURIComponent('${h.jsStringEscape(it.name)}')"/>
-            </f:entry>
-        </f:advanced>
-    </f:section>
-
-    <f:section title="${%Pipeline}">
-        <f:dropdownDescriptorSelector title="${%Definition}" field="definition" descriptors="${descriptor.getDefinitionDescriptors(it)}"/>
-    </f:section>
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+    <f:entry field="quietPeriod" title="${%Quiet period}" description="${%Number of seconds}">
+        <f:number clazz="number" value="${it.quietPeriod}" min="0" step="1"/>
+    </f:entry>
 </j:jelly>

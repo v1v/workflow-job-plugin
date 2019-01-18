@@ -95,6 +95,7 @@ import org.jenkinsci.plugins.workflow.flow.FlowDefinitionDescriptor;
 import org.jenkinsci.plugins.workflow.job.properties.DisableConcurrentBuildsJobProperty;
 import org.jenkinsci.plugins.workflow.job.properties.DisableResumeJobProperty;
 import org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty;
+import org.jenkinsci.plugins.workflow.job.properties.QuietPeriodJobProperty;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
@@ -110,6 +111,7 @@ public final class WorkflowJob extends Job<WorkflowJob,WorkflowRun> implements L
     private FlowDefinition definition;
     /** @deprecated - use {@link PipelineTriggersJobProperty} */
     private DescribableList<Trigger<?>,TriggerDescriptor> triggers = new DescribableList<>(this);
+    /** @deprecated - use {@link QuietPeriodJobProperty} */
     private volatile Integer quietPeriod;
     @SuppressWarnings("deprecation")
     private hudson.model.BuildAuthorizationToken authToken;
@@ -183,11 +185,6 @@ public final class WorkflowJob extends Job<WorkflowJob,WorkflowRun> implements L
         definition = req.bindJSON(FlowDefinition.class, json.getJSONObject("definition"));
         authToken = hudson.model.BuildAuthorizationToken.create(req);
 
-        if (req.getParameter("hasCustomQuietPeriod") != null) {
-            quietPeriod = Integer.parseInt(req.getParameter("quiet_period"));
-        } else {
-            quietPeriod = null;
-        }
         makeDisabled(json.optBoolean("disable"));
         getTriggersJobProperty().stopTriggers();
         getTriggersJobProperty().startTriggers(Items.currentlyUpdatingByXml());
@@ -299,7 +296,14 @@ public final class WorkflowJob extends Job<WorkflowJob,WorkflowRun> implements L
 
     public void setQuietPeriod(Integer seconds) throws IOException {
         this.quietPeriod = seconds;
-        save();
+        BulkChange bc = new BulkChange(this);
+        try {
+            removeProperty(QuietPeriodJobProperty.class);
+            addProperty(new QuietPeriodJobProperty(seconds));
+            bc.commit();
+        } finally {
+            bc.abort();
+        }
     }
 
     // TODO delete after baseline has https://github.com/jenkinsci/jenkins/pull/3099
@@ -400,7 +404,7 @@ public final class WorkflowJob extends Job<WorkflowJob,WorkflowRun> implements L
      */
     @Deprecated
     public static final Permission ABORT = CANCEL;
-    
+
     @Override public Collection<? extends SubTask> getSubTasks() {
         // TODO mostly copied from AbstractProject, except SubTaskContributor is not available:
         List<SubTask> subTasks = new ArrayList<>();
